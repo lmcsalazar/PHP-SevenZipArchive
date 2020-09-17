@@ -134,9 +134,13 @@ class SevenZipArchive implements Countable, Iterator {
 		if (is_null($this->binary)) {
 			if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
 				$this->binary = '7za';
-			}
-			else {
-				$this->binary = '7zr'; # minimal version of 7za
+			} else {
+				$temporal = $this->getAutoBinary7z();
+					if (is_null($temporal)){
+						$this->binary = '7zr'; # minimal version of 7za
+					} else {
+						$this->binary = $temporal;
+					}
 			}
 		}
 		$this->debug && error_log(__METHOD__ . ' Archive file: ' . $this->file);
@@ -148,6 +152,17 @@ class SevenZipArchive implements Countable, Iterator {
 		#$this->rewind();
 	}
 
+	private function getAutoBinary7z(): ?string {
+		$binary7zPaths = ['/usr/bin/7z', '/usr/bin/7za', '/usr/local/bin/7z', '/usr/local/bin/7za', null];
+
+		foreach ($binary7zPaths as $binary7zPath) {
+			if (\file_exists($binary7zPath)) {
+				break;
+			}
+		}
+
+		return $binary7zPath;
+	}
 
 	/**
 	* Executes the list command and returns the entries.
@@ -263,7 +278,6 @@ class SevenZipArchive implements Countable, Iterator {
 		$this->meta = $meta;
 		return $entries;
 	}
-
 
 	/**
 	* Adds the contents of the given directory to the archive.
