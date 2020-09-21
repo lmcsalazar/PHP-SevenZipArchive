@@ -363,7 +363,6 @@ class SevenZipArchive implements Countable, Iterator {
 		$rc = null;
 		$output = array();
 		$cmd = $this->binary . ' a -bd -y -si' . escapeshellarg($localname) . ' ' . escapeshellarg($this->file);
-		echo $cmd;
 		$this->debug && error_log(__METHOD__ . ' Command: ' . $cmd);
 		$rc = null;
 		$output = array();
