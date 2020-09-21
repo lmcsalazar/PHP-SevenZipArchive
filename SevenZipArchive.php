@@ -132,15 +132,12 @@ class SevenZipArchive implements Countable, Iterator {
 			$this->internal_encoding = mb_internal_encoding();
 		}
 		if (is_null($this->binary)) {
-			if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-				$temporal = $this->getAutoBinary7zWin();
-				if ($temporal == null){
-					$this->binary = "7za";
-				} else {
-					$this->binary = $temporal;
-				}
-			} else {
+			if (stripos(PHP_OS_FAMILY, 'Windows') === 0) {
+				$this->binary = $this->getAutoBinary7zWin();
+			} else if (stripos(PHP_OS_FAMILY, 'Linux') === 0){
 				$this->binary = $this->getAutoBinary7zLinux();
+			} else {
+				throw new \InvalidArgumentException("Unknown OPERATIVE SYSTEM");
 			}
 		}
 		$this->debug && error_log(__METHOD__ . ' Archive file: ' . $this->file);
@@ -153,11 +150,11 @@ class SevenZipArchive implements Countable, Iterator {
 	}
 
 	private function getAutoBinary7zWin(): ?string {
-		$binary7zPaths = ['C:\Program Files\7-Zip\7z.exe','%ProgramFiles%\7-Zip\7z.exe',null];
+		$binary7zPaths = ['C:\Program Files\7-Zip\7z.exe','%ProgramFiles%\7-Zip\7z.exe','7za'];
 
 		foreach ($binary7zPaths as $binary7zPath) {
 			if (\file_exists($binary7zPath)) {
-				if ($binary7zPath != null){
+				if ($binary7zPath != "7za"){
 					$binary7zPath = '"'.$binary7zPath.'"';
 				}
 				break;
