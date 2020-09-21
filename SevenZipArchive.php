@@ -133,14 +133,14 @@ class SevenZipArchive implements Countable, Iterator {
 		}
 		if (is_null($this->binary)) {
 			if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-				$this->binary = '7za';
+				$temporal = $this->getAutoBinary7zWin();
+				if ($temporal == null){
+					$this->binary = "7za";
+				} else {
+					$this->binary = $temporal;
+				}
 			} else {
-				$temporal = $this->getAutoBinary7z();
-					if (is_null($temporal)){
-						$this->binary = '7zr'; # minimal version of 7za
-					} else {
-						$this->binary = $temporal;
-					}
+				$this->binary = $this->getAutoBinary7zLinux();
 			}
 		}
 		$this->debug && error_log(__METHOD__ . ' Archive file: ' . $this->file);
@@ -152,8 +152,22 @@ class SevenZipArchive implements Countable, Iterator {
 		#$this->rewind();
 	}
 
-	private function getAutoBinary7z(): ?string {
-		$binary7zPaths = ['/usr/bin/7z', '/usr/bin/7za', '/usr/local/bin/7z', '/usr/local/bin/7za', null];
+	private function getAutoBinary7zWin(): ?string {
+		$binary7zPaths = ['C:\Program Files\7-Zip\7z.exe','%ProgramFiles%\7-Zip\7z.exe',null];
+
+		foreach ($binary7zPaths as $binary7zPath) {
+			if (\file_exists($binary7zPath)) {
+				if ($binary7zPath != null){
+					$binary7zPath = '"'.$binary7zPath.'"';
+				}
+				break;
+			}
+		}
+		return $binary7zPath;
+	}
+
+	private function getAutoBinary7zLinux(): ?string {
+		$binary7zPaths = ['/usr/bin/7z', '/usr/bin/7za', '/usr/local/bin/7z', '/usr/local/bin/7za', '7zr'];
 
 		foreach ($binary7zPaths as $binary7zPath) {
 			if (\file_exists($binary7zPath)) {
@@ -310,7 +324,7 @@ class SevenZipArchive implements Countable, Iterator {
 		# -snl store symbolic links as links switch supported in 16.02, but not in 9.20.
 		$rc = null;
 		$output = array();
-		$cmd = escapeshellcmd($this->binary) . ' a -bd -y ' . escapeshellarg($this->file) . ' ' . escapeshellarg($realdir);
+		$cmd = $this->binary . ' a -bd -y ' . escapeshellarg($this->file) . ' ' . escapeshellarg($realdir);
 		$this->debug && error_log(__METHOD__ . ' Command: ' . $cmd);
 		$rc = null;
 		$output = array();
@@ -348,7 +362,8 @@ class SevenZipArchive implements Countable, Iterator {
 		# cat .gitignore | 7zr a -si'The €U/sucks/file.txt' test.7z
 		$rc = null;
 		$output = array();
-		$cmd = escapeshellcmd($this->binary) . ' a -bd -y -si' . escapeshellarg($localname) . ' ' . escapeshellarg($this->file);
+		$cmd = $this->binary . ' a -bd -y -si' . escapeshellarg($localname) . ' ' . escapeshellarg($this->file);
+		echo $cmd;
 		$this->debug && error_log(__METHOD__ . ' Command: ' . $cmd);
 		$rc = null;
 		$output = array();
